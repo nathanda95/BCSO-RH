@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String                   @id @default(uuid()) @db.Uuid
+  discord_id    String                   @unique
+  username      String
+  discriminator String?
+  avatar        String?
+  site_admin    Boolean                  @default(false)
+  created_at    DateTime                 @default(now())
+  updated_at    DateTime                 @updatedAt
+
+  membership    DiscordMembershipCache?
+  tokens        DiscordTokens?
+}
+
+model DiscordMembershipCache {
+  id        String   @id @default(uuid()) @db.Uuid
+  user_id   String   @unique @db.Uuid
+  guild_id  String
+  role_ids  String[]
+  synced_at DateTime
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model DiscordTokens {
+  id            String   @id @default(uuid()) @db.Uuid
+  user_id       String   @unique @db.Uuid
+  access_token  String
+  refresh_token String
+  expires_at    DateTime
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
