@@ -1,0 +1,7 @@
+node_modules
+.env
+frontend/.env
+backend/.env
+.prisma
+.DS_Store
+npm-debug.log*
