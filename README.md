@@ -30,6 +30,14 @@ It also includes the BCSO RH cadet tracking MVP (cadets, recruitment, training m
 
 Frontend runs on `http://localhost:5173`, backend on `http://localhost:3000`.
 
+## Docker (Full Stack)
+1. Ensure `backend/.env` is filled (Discord credentials, role IDs, etc).
+2. Build and start:
+   - `docker compose -f docker/docker-compose.app.yml up --build`
+3. Apply Prisma migrations automatically on backend start.
+
+Frontend runs on `http://localhost:5173`, backend on `http://localhost:3000`, Postgres on `5432`.
+
 ## OAuth2 Scopes
 The app uses `identify` and `guilds.members.read` to verify server membership and roles.
 
