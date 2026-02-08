@@ -1,6 +1,6 @@
 import { env } from "../env";
 
-export type Permission = "admin" | "mod" | "premium";
+export type Permission = "admin" | "mod" | "premium" | "cadet";
 
 export function computePermissions(roleIds: string[], siteAdmin: boolean): Permission[] {
   const perms = new Set<Permission>();
@@ -17,6 +17,9 @@ export function computePermissions(roleIds: string[], siteAdmin: boolean): Permi
   }
   if (env.DISCORD_ROLE_PREMIUM_ID && roleIds.includes(env.DISCORD_ROLE_PREMIUM_ID)) {
     perms.add("premium");
+  }
+  if (env.DISCORD_ROLE_CADET_ID && roleIds.includes(env.DISCORD_ROLE_CADET_ID)) {
+    perms.add("cadet");
   }
 
   return Array.from(perms);

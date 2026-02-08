@@ -2,6 +2,9 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import AppPage from "./pages/AppPage";
 import Forbidden from "./pages/Forbidden";
+import CadetsPage from "./pages/CadetsPage";
+import CadetDetail from "./pages/CadetDetail";
+import TrainingModulesPage from "./pages/TrainingModulesPage";
 import { useAuth } from "./auth/AuthContext";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -27,6 +30,38 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AppPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cadets"
+        element={
+          <ProtectedRoute>
+            <CadetsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cadets/me"
+        element={
+          <ProtectedRoute>
+            <CadetDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cadets/:id"
+        element={
+          <ProtectedRoute>
+            <CadetDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/training"
+        element={
+          <ProtectedRoute>
+            <TrainingModulesPage />
           </ProtectedRoute>
         }
       />

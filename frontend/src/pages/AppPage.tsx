@@ -1,46 +1,34 @@
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import PermissionsCard from "../components/PermissionsCard";
-
-function getAvatarUrl(discordId: string, avatar: string | null) {
-  if (!avatar) return null;
-  return `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png`;
-}
 
 export default function AppPage() {
-  const { user, permissions, roleIds, isMember, refresh, logout } = useAuth();
+  const { permissions } = useAuth();
+  const navigate = useNavigate();
 
-  if (!user) {
-    return null;
-  }
-
-  const displayName = user.discriminator && user.discriminator !== "0"
-    ? `${user.username}#${user.discriminator}`
-    : user.username;
-
-  const avatarUrl = getAvatarUrl(user.discordId, user.avatar);
+  const isAdmin = permissions.includes("admin");
+  const isMod = permissions.includes("mod");
+  const isCadet = permissions.includes("cadet");
 
   return (
     <div className="page">
       <div className="card">
-        <div className="profile">
-          {avatarUrl ? (
-            <img className="avatar" src={avatarUrl} alt={displayName} />
-          ) : (
-            <div className="avatar placeholder" />
-          )}
-          <div>
-            <h1>{displayName}</h1>
-            <p>Discord ID: {user.discordId}</p>
-            {user.siteAdmin && <span className="badge">Site Admin Override</span>}
-          </div>
-        </div>
+        <h1>BCSO RH</h1>
+        <p>Bienvenue sur l'espace interne.</p>
         <div className="actions">
-          <button className="button" onClick={refresh}>Refresh roles</button>
-          <button className="button secondary" onClick={logout}>Logout</button>
+          {(isAdmin || isMod) && (
+            <button className="button" onClick={() => navigate("/cadets")}>Gestion cadets</button>
+          )}
+          {(isAdmin || isMod) && (
+            <button className="button secondary" onClick={() => navigate("/training")}>Formations</button>
+          )}
+          {isCadet && (
+            <button className="button" onClick={() => navigate("/cadets/me")}>Ma fiche</button>
+          )}
         </div>
+        {!isAdmin && !isMod && !isCadet && (
+          <p className="muted">Aucune permission specifique detectee.</p>
+        )}
       </div>
-
-      <PermissionsCard permissions={permissions} roleIds={roleIds} isMember={isMember} />
     </div>
   );
 }

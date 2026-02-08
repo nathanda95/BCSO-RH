@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+﻿import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { apiFetch, API_URL } from "../api";
 
 export type User = {
@@ -15,6 +15,7 @@ type AuthState = {
   permissions: string[];
   roleIds: string[];
   isMember: boolean;
+  allowMembersList: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [roleIds, setRoleIds] = useState<string[]>([]);
   const [isMember, setIsMember] = useState<boolean>(true);
+  const [allowMembersList, setAllowMembersList] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   async function loadMe() {
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPermissions([]);
         setRoleIds([]);
         setIsMember(true);
+        setAllowMembersList(false);
         return;
       }
       const data = await response.json();
@@ -46,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPermissions(data.permissions ?? []);
       setRoleIds(data.roleIds ?? []);
       setIsMember(data.isMember ?? true);
+      setAllowMembersList(data.allowMembersList ?? false);
     } finally {
       setLoading(false);
     }
@@ -63,10 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPermissions([]);
         setRoleIds([]);
         setIsMember(true);
+        setAllowMembersList(false);
       }
       if (response.status === 403) {
         const data = await response.json().catch(() => null);
         setIsMember(data?.isMember ?? false);
+        setAllowMembersList(data?.allowMembersList ?? false);
       }
       return;
     }
@@ -75,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPermissions(data.permissions ?? []);
     setRoleIds(data.roleIds ?? []);
     setIsMember(data.isMember ?? true);
+    setAllowMembersList(data.allowMembersList ?? false);
   }
 
   async function logout() {
@@ -83,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPermissions([]);
     setRoleIds([]);
     setIsMember(true);
+    setAllowMembersList(false);
   }
 
   function login() {
@@ -95,12 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       permissions,
       roleIds,
       isMember,
+      allowMembersList,
       loading,
       refresh,
       logout,
       login
     }),
-    [user, permissions, roleIds, isMember, loading]
+    [user, permissions, roleIds, isMember, allowMembersList, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

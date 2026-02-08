@@ -8,6 +8,9 @@ import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
 import { adminRouter } from "./routes/admin";
 import { modRouter } from "./routes/mod";
+import { cadetsRouter } from "./routes/cadets";
+import { scenariosRouter } from "./routes/scenarios";
+import { trainingRouter } from "./routes/training";
 
 const app = express();
 
@@ -55,6 +58,9 @@ app.use("/auth", authRouter);
 app.use("/me", meRouter);
 app.use("/admin", adminRouter);
 app.use("/mod", modRouter);
+app.use("/cadets", cadetsRouter);
+app.use("/scenarios", scenariosRouter);
+app.use("/training", trainingRouter);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("[server] Unhandled error", err);

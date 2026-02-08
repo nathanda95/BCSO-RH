@@ -19,6 +19,154 @@ model User {
 
   membership    DiscordMembershipCache?
   tokens        DiscordTokens?
+  recruitment_questionnaire_signed Recruitment[] @relation("RecruitmentQuestionnaireSignedBy")
+  recruitment_sport_signed        Recruitment[] @relation("RecruitmentSportSignedBy")
+  recruitment_medical_signed      Recruitment[] @relation("RecruitmentMedicalSignedBy")
+  training_modules_signed         TrainingModule[] @relation("TrainingModuleSignedBy")
+  evaluations_signed              Evaluation[] @relation("EvaluationSignedBy")
+  scenarios_updated               Scenario[]
+  audit_logs                       AuditLog[]
+  cadet                            Cadet?
+  training_modules_created         TrainingModuleDefinition[]
+}
+
+enum RecruitmentStatus {
+  PENDING
+  VALIDATED
+  REFUSED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum EvaluationStatus {
+  ACQUIRED
+  NOT_ACQUIRED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SIGN
+}
+
+model Cadet {
+  id            String          @id @default(uuid()) @db.Uuid
+  first_name    String
+  last_name     String
+  cadet_number  String          @unique
+  user_id       String?         @unique @db.Uuid
+  birth_date    DateTime?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+
+  recruitment    Recruitment?
+  trainingModules TrainingModule[]
+  evaluation     Evaluation?
+  user          User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+}
+
+model Recruitment {
+  id                                String            @id @default(uuid()) @db.Uuid
+  cadet_id                          String            @unique @db.Uuid
+  questionnaire_spreadsheet_url     String?
+  questionnaire_answers_text        String?
+  questionnaire_comment             String?
+  questionnaire_status              RecruitmentStatus @default(PENDING)
+  questionnaire_signed_by_user_id   String?           @db.Uuid
+  questionnaire_signed_at           DateTime?
+  sport_comment                     String?
+  sport_time_minutes                Int?
+  sport_status                      RecruitmentStatus @default(PENDING)
+  sport_signed_by_user_id           String?           @db.Uuid
+  sport_signed_at                   DateTime?
+  medical_comment                   String?
+  medical_status                    RecruitmentStatus @default(PENDING)
+  medical_signed_by_user_id         String?           @db.Uuid
+  medical_signed_at                 DateTime?
+  created_at                        DateTime          @default(now())
+  updated_at                        DateTime          @updatedAt
+
+  cadet                 Cadet @relation(fields: [cadet_id], references: [id], onDelete: Cascade)
+  questionnaire_signed_by User? @relation("RecruitmentQuestionnaireSignedBy", fields: [questionnaire_signed_by_user_id], references: [id])
+  sport_signed_by        User? @relation("RecruitmentSportSignedBy", fields: [sport_signed_by_user_id], references: [id])
+  medical_signed_by      User? @relation("RecruitmentMedicalSignedBy", fields: [medical_signed_by_user_id], references: [id])
+}
+
+model TrainingModule {
+  id                 String           @id @default(uuid()) @db.Uuid
+  cadet_id           String           @db.Uuid
+  module_definition_id String         @db.Uuid
+  comment            String?
+  rating_1_10        Int?
+  attendance         AttendanceStatus @default(PRESENT)
+  signed_by_user_id  String?          @db.Uuid
+  signed_at          DateTime?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  cadet            Cadet @relation(fields: [cadet_id], references: [id], onDelete: Cascade)
+  moduleDefinition TrainingModuleDefinition @relation(fields: [module_definition_id], references: [id], onDelete: Cascade)
+  signed_by        User? @relation("TrainingModuleSignedBy", fields: [signed_by_user_id], references: [id])
+
+  @@unique([cadet_id, module_definition_id])
+}
+
+model Evaluation {
+  id                 String            @id @default(uuid()) @db.Uuid
+  cadet_id           String            @unique @db.Uuid
+  weekly_average     Float?
+  general_comment    String?
+  written_test_score Float?
+  scenario_score     Float?
+  total_score        Float?
+  ppa                EvaluationStatus  @default(NOT_ACQUIRED)
+  training           EvaluationStatus  @default(NOT_ACQUIRED)
+  signed_by_user_id  String?           @db.Uuid
+  signed_at          DateTime?
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+
+  cadet     Cadet @relation(fields: [cadet_id], references: [id], onDelete: Cascade)
+  signed_by User? @relation("EvaluationSignedBy", fields: [signed_by_user_id], references: [id])
+}
+
+model TrainingModuleDefinition {
+  id                 String   @id @default(uuid()) @db.Uuid
+  title              String
+  description        String?
+  created_by_user_id String?  @db.Uuid
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  created_by User? @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
+  modules    TrainingModule[]
+}
+
+model Scenario {
+  id                 String   @id @default(uuid()) @db.Uuid
+  content_text       String
+  updated_by_user_id String?  @db.Uuid
+  updated_at         DateTime @updatedAt
+
+  updated_by User? @relation(fields: [updated_by_user_id], references: [id])
+}
+
+model AuditLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  user_id     String      @db.Uuid
+  action      AuditAction
+  entity      String
+  entity_id   String
+  before_json Json?
+  after_json  Json?
+  created_at  DateTime    @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
 }
 
 model DiscordMembershipCache {

@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import { env } from "../env";
 import { prisma } from "../prisma";
 import { decryptToken, encryptToken } from "../utils/encryption";
@@ -17,6 +17,8 @@ router.get("/", requireAuth, async (req, res) => {
   const isMember = req.session.isMember !== false;
   const roleIds = isMember ? membership?.role_ids ?? [] : [];
   const permissions = computePermissions(roleIds, user.site_admin);
+  const isNathan = env.DISCORD_NATHAN_ID && user.discord_id === env.DISCORD_NATHAN_ID;
+  const allowMembersList = isNathan || permissions.includes("admin");
 
   res.json({
     user: {
@@ -29,7 +31,8 @@ router.get("/", requireAuth, async (req, res) => {
     },
     permissions,
     roleIds,
-    isMember
+    isMember,
+    allowMembersList
   });
 });
 
@@ -88,6 +91,8 @@ router.post("/refresh", requireAuth, async (req, res) => {
 
   req.session.isMember = true;
   const permissions = computePermissions(member.roles, user.site_admin);
+  const isNathan = env.DISCORD_NATHAN_ID && user.discord_id === env.DISCORD_NATHAN_ID;
+  const allowMembersList = isNathan || permissions.includes("admin");
 
   res.json({
     user: {
@@ -100,8 +105,10 @@ router.post("/refresh", requireAuth, async (req, res) => {
     },
     permissions,
     roleIds: member.roles,
-    isMember: true
+    isMember: true,
+    allowMembersList
   });
 });
 
 export { router as meRouter };
+

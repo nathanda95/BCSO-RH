@@ -1,4 +1,4 @@
-import { fetch } from "undici";
+﻿import { fetch } from "undici";
 import { env } from "../env";
 
 const DISCORD_API_BASE = "https://discord.com/api";
@@ -21,6 +21,21 @@ export type DiscordUser = {
 
 export type DiscordGuildMember = {
   roles: string[];
+};
+
+export type DiscordGuildMemberWithUser = {
+  user: DiscordUser;
+  nick?: string | null;
+  roles: string[];
+};
+
+export type DiscordRole = {
+  id: string;
+  name: string;
+  color: number;
+  position: number;
+  managed: boolean;
+  mentionable: boolean;
 };
 
 export function getDiscordAuthorizeUrl(state: string): string {
@@ -115,4 +130,61 @@ export async function fetchGuildMember(accessToken: string, guildId: string): Pr
   }
 
   return (await response.json()) as DiscordGuildMember;
+}
+
+function getBotAuthHeaders() {
+  if (!env.DISCORD_BOT_TOKEN) {
+    throw new Error("Missing DISCORD_BOT_TOKEN for bot API calls.");
+  }
+  return {
+    Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
+  };
+}
+
+export async function fetchGuildRoles(guildId: string): Promise<DiscordRole[]> {
+  const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/roles`, {
+    headers: getBotAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Discord guild roles fetch failed: ${response.status} ${text}`);
+  }
+
+  return (await response.json()) as DiscordRole[];
+}
+
+export async function fetchGuildMembers(guildId: string): Promise<DiscordGuildMemberWithUser[]> {
+  const members: DiscordGuildMemberWithUser[] = [];
+  let after: string | undefined;
+
+  while (true) {
+    const params = new URLSearchParams({ limit: "1000" });
+    if (after) {
+      params.set("after", after);
+    }
+
+    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/members?${params.toString()}`, {
+      headers: getBotAuthHeaders()
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Discord guild members fetch failed: ${response.status} ${text}`);
+    }
+
+    const batch = (await response.json()) as DiscordGuildMemberWithUser[];
+    if (batch.length === 0) {
+      break;
+    }
+
+    members.push(...batch);
+    after = batch[batch.length - 1].user?.id;
+
+    if (!after || batch.length < 1000) {
+      break;
+    }
+  }
+
+  return members;
 }
