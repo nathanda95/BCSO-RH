@@ -31,6 +31,22 @@ body {
     radial-gradient(900px circle at 85% 10%, #1b2a4a, transparent 50%),
     var(--bg);
   min-height: 100vh;
+  position: relative;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("/src/assets/lspa.png") center 18% / min(520px, 70vw) no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .page {
