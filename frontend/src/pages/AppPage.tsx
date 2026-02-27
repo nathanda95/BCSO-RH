@@ -12,7 +12,7 @@ export default function AppPage() {
   return (
     <div className="page">
       <div className="card">
-        <h1>BCSO RH</h1>
+        <h1>Police Academy - RH</h1>
         <p>Bienvenue sur l'espace interne.</p>
         <div className="actions">
           {(isAdmin || isMod) && (

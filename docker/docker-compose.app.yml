@@ -1,51 +1,25 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: bcso_rh_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: discord_auth
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   backend:
     build:
       context: ../backend
     container_name: bcso_rh_backend
     restart: unless-stopped
+    network_mode: host
     env_file:
       - ../backend/.env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/discord_auth?schema=public
-      FRONTEND_URL: http://localhost:5173
-      PORT: 3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: ["sh", "-c", "npm run migrate && npm run dev"]
+      DATABASE_URL: postgresql://bcso_db_user:20%^hXZe4YfgjU4DEz0k@127.0.0.1:5432/bcso_app?schema=public
+      FRONTEND_URL: https://rh-bcso.nathanda95.fr
+      DISCORD_REDIRECT_URI: https://rh-bcso-back.nathanda95.fr/auth/discord/callback
+      PORT: 8090
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
 
   frontend:
     build:
       context: ../frontend
-      args:
-        VITE_API_URL: http://localhost:3000
     container_name: bcso_rh_frontend
     restart: unless-stopped
     ports:
-      - "5173:80"
+      - "8091:80"
     depends_on:
       - backend
-
-volumes:
-  postgres_data:

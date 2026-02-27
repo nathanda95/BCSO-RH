@@ -44,6 +44,7 @@ type Evaluation = {
   generalComment: string | null;
   writtenTestScore: number | null;
   scenarioScore: number | null;
+  attitudeScore: number | null;
   totalScore: number | null;
   ppa: "ACQUIRED" | "NOT_ACQUIRED";
   training: "ACQUIRED" | "NOT_ACQUIRED";
@@ -56,9 +57,11 @@ type CadetDetail = {
   firstName: string;
   lastName: string;
   cadetNumber: string;
+  affectation: string | null;
   userId: string | null;
   userName: string | null;
   birthDate: string | null;
+  archivedAt: string | null;
   recruitment: {
     questionnaire: RecruitmentQuestionnaire;
     sport: RecruitmentSport;
@@ -112,6 +115,7 @@ type EvaluationDraft = {
   generalComment: string;
   writtenTestScore: string;
   scenarioScore: string;
+  attitudeScore: string;
   totalScore: string;
   ppa: "ACQUIRED" | "NOT_ACQUIRED";
   training: "ACQUIRED" | "NOT_ACQUIRED";
@@ -121,6 +125,7 @@ type CadetInfoDraft = {
   firstName: string;
   lastName: string;
   cadetNumber: string;
+  affectation: string;
   birthDate: string;
   userName: string;
 };
@@ -149,6 +154,8 @@ export default function CadetDetail() {
   const [activeTab, setActiveTab] = useState("recruitment");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireDraft | null>(null);
   const [sport, setSport] = useState<SportDraft | null>(null);
   const [medical, setMedical] = useState<MedicalDraft | null>(null);
@@ -242,6 +249,9 @@ export default function CadetDetail() {
       scenarioScore: cadet.evaluation.scenarioScore !== null && cadet.evaluation.scenarioScore !== undefined
         ? String(cadet.evaluation.scenarioScore)
         : "",
+      attitudeScore: cadet.evaluation.attitudeScore !== null && cadet.evaluation.attitudeScore !== undefined
+        ? String(cadet.evaluation.attitudeScore)
+        : "",
       totalScore: cadet.evaluation.totalScore !== null && cadet.evaluation.totalScore !== undefined
         ? String(cadet.evaluation.totalScore)
         : "",
@@ -252,6 +262,7 @@ export default function CadetDetail() {
       firstName: cadet.firstName,
       lastName: cadet.lastName,
       cadetNumber: cadet.cadetNumber,
+      affectation: cadet.affectation ?? "",
       birthDate: cadet.birthDate ? cadet.birthDate.slice(0, 10) : "",
       userName: cadet.userName ?? ""
     });
@@ -289,6 +300,7 @@ export default function CadetDetail() {
         firstName: cadetInfo.firstName,
         lastName: cadetInfo.lastName,
         cadetNumber: cadetInfo.cadetNumber,
+        affectation: cadetInfo.affectation ? cadetInfo.affectation : null,
         birthDate: cadetInfo.birthDate ? cadetInfo.birthDate : null,
         userName: cadetInfo.userName ? cadetInfo.userName : null
       }
@@ -373,6 +385,7 @@ export default function CadetDetail() {
         generalComment: evaluation.generalComment || null,
         writtenTestScore: evaluation.writtenTestScore ? Number(evaluation.writtenTestScore) : null,
         scenarioScore: evaluation.scenarioScore ? Number(evaluation.scenarioScore) : null,
+        attitudeScore: evaluation.attitudeScore ? Number(evaluation.attitudeScore) : null,
         totalScore: evaluation.totalScore ? Number(evaluation.totalScore) : null,
         ppa: evaluation.ppa,
         training: evaluation.training
@@ -384,6 +397,49 @@ export default function CadetDetail() {
       await loadCadet();
     }
     setSaving(false);
+  }
+
+  async function handleDeleteCadet() {
+    if (!id || !canEditCadet || deleting || archiving) return;
+    const confirmed = window.confirm(`Supprimer le cadet ${cadet?.lastName ?? ""} ${cadet?.firstName ?? ""} ?`);
+    if (!confirmed) return;
+    setDeleting(true);
+    setError(null);
+    const response = await apiFetch(`/cadets/${id}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) {
+      setError("Suppression impossible.");
+      setDeleting(false);
+      return;
+    }
+    navigate("/cadets");
+  }
+
+  async function handleArchiveToggle() {
+    if (!id || !canEditCadet || archiving) return;
+    const nextArchived = !cadet?.archivedAt;
+    const message = nextArchived
+      ? `Archiver la fiche de ${cadet?.lastName ?? ""} ${cadet?.firstName ?? ""} ?`
+      : `Desarchiver la fiche de ${cadet?.lastName ?? ""} ${cadet?.firstName ?? ""} ?`;
+    const confirmed = window.confirm(message);
+    if (!confirmed) return;
+    setArchiving(true);
+    setError(null);
+    const response = await apiFetch(`/cadets/${id}`, {
+      method: "PATCH",
+      json: {
+        archived: nextArchived
+      }
+    });
+    if (!response.ok) {
+      setError("Archivage impossible.");
+      setArchiving(false);
+      return;
+    }
+    const data = await response.json();
+    setCadet(data.cadet ?? null);
+    setArchiving(false);
   }
 
   async function handleSign(scope: string, moduleId?: string) {
@@ -441,9 +497,32 @@ export default function CadetDetail() {
           <div>
             <h1>{cadet.lastName} {cadet.firstName}</h1>
             <p>Cadet #{cadet.cadetNumber}</p>
+            {cadet.archivedAt && (
+              <p className="badge warning">
+                Archive le {new Date(cadet.archivedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
           <div className="actions">
             <button className="button secondary" onClick={() => navigate(backTarget)}>Retour</button>
+            {showActions && canEditCadet && (
+              <button
+                className="button secondary"
+                onClick={handleArchiveToggle}
+                disabled={saving || deleting || archiving}
+              >
+                {cadet.archivedAt ? "Desarchiver" : "Archiver"}
+              </button>
+            )}
+            {showActions && canEditCadet && (
+              <button
+                className="button secondary"
+                onClick={handleDeleteCadet}
+                disabled={saving || deleting || archiving}
+              >
+                {deleting ? "Suppression..." : "Supprimer"}
+              </button>
+            )}
           </div>
         </div>
         <div className="tabs">
@@ -486,7 +565,16 @@ export default function CadetDetail() {
               />
             </label>
             <label className="field">
-              <span>Date de naissance</span>
+              <span>Affectation</span>
+              <input
+                className="input"
+                value={cadetInfo.affectation}
+                onChange={(event) => setCadetInfo({ ...cadetInfo, affectation: event.target.value })}
+                disabled={!canEditCadet}
+              />
+            </label>
+            <label className="field">
+              <span>Date d'inscription</span>
               <input
                 className="input"
                 type="date"
@@ -794,6 +882,16 @@ export default function CadetDetail() {
               />
             </label>
             <label className="field">
+              <span>Note d'attitude</span>
+              <input
+                className="input"
+                type="number"
+                value={evaluation.attitudeScore}
+                onChange={(event) => setEvaluation({ ...evaluation, attitudeScore: event.target.value })}
+                disabled={!canEdit || (!!signedFlags.evaluation && !isAdmin)}
+              />
+            </label>
+            <label className="field">
               <span>Total</span>
               <input
                 className="input"
@@ -827,7 +925,7 @@ export default function CadetDetail() {
               </select>
             </label>
             <label className="field">
-              <span>Training</span>
+              <span>Validation évaluation</span>
               <select
                 className="input"
                 value={evaluation.training}

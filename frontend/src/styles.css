@@ -210,6 +210,23 @@ p {
   font-size: 13px;
 }
 
+.cadet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cadet-row .row-button {
+  flex: 1 1 240px;
+}
+
+.cadet-row .actions {
+  margin-top: 0;
+  flex-wrap: wrap;
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
