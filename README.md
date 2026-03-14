@@ -28,6 +28,12 @@ It also includes the BCSO RH cadet tracking MVP (cadets, recruitment, training m
 9. Start both servers:
    - `npm run dev`
 
+To run the Discord bot for automatic role assignment:
+- `npm run dev:bot`
+
+To run frontend, backend, and bot together:
+- `npm run dev:all`
+
 Frontend runs on `http://localhost:5173`, backend on `http://localhost:3000`.
 
 ## Docker (Full Stack)

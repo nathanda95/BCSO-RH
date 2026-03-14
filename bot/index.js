@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 const token = process.env.DISCORD_BOT_TOKEN;
 const guildId = process.env.DISCORD_GUILD_ID;
-const autoRoleId = process.env.DISCORD_AUTO_ROLE_ID;
+const autoRoleId = process.env.DISCORD_AUTO_ROLE_ID || process.env.DISCORD_ROLE_CADET_ID;
 
 if (!token) {
   console.error("Missing DISCORD_BOT_TOKEN in bot/.env");
@@ -16,7 +16,7 @@ if (!guildId) {
 }
 
 if (!autoRoleId) {
-  console.error("Missing DISCORD_AUTO_ROLE_ID in bot/.env");
+  console.error("Missing DISCORD_AUTO_ROLE_ID or DISCORD_ROLE_CADET_ID in .env");
   process.exit(1);
 }
 
@@ -26,6 +26,7 @@ const client = new Client({
 
 client.once("ready", async () => {
   console.log(`Bot connected as ${client.user?.tag ?? "unknown"}`);
+  console.log(`Auto role configured: ${autoRoleId}`);
 
   const guild = client.guilds.cache.get(guildId) ?? (await client.guilds.fetch(guildId));
   if (!guild) {
@@ -51,6 +52,11 @@ client.on("guildMemberAdd", async (member) => {
 
     if (!role) {
       console.error("Auto role not found. Check DISCORD_AUTO_ROLE_ID.");
+      return;
+    }
+
+    if (member.roles.cache.has(autoRoleId)) {
+      console.log(`Member ${member.user.tag} already has role ${role.name}`);
       return;
     }
 

@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "dev:all": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\" \"npm run start --prefix bot\"",
+    "dev:bot": "npm run start --prefix bot",
     "dev:db": "docker compose -f docker/docker-compose.yml up -d"
   },
   "devDependencies": {
