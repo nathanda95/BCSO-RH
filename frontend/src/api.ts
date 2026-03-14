@@ -4,11 +4,11 @@ type FetchOptions = RequestInit & { json?: unknown };
 
 export async function apiFetch(path: string, options: FetchOptions = {}) {
   const url = `${API_URL}${path}`;
-  const headers: Record<string, string> = options.headers ? { ...options.headers } : {};
+  const headers = new Headers(options.headers);
 
   let body = options.body;
   if (options.json !== undefined) {
-    headers["Content-Type"] = "application/json";
+    headers.set("Content-Type", "application/json");
     body = JSON.stringify(options.json);
   }
 

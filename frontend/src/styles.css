@@ -31,6 +31,22 @@ body {
     radial-gradient(900px circle at 85% 10%, #1b2a4a, transparent 50%),
     var(--bg);
   min-height: 100vh;
+  position: relative;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("/src/assets/lspa.png") center 18% / min(520px, 70vw) no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .page {
@@ -50,7 +66,7 @@ body {
 
 .card {
   width: min(720px, 100%);
-  background: var(--card);
+  background: rgba(13, 22, 40, 0.86);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 28px;
@@ -189,7 +205,7 @@ p {
   padding: 14px 16px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: rgba(13, 21, 40, 0.85);
+  background: rgba(13, 21, 40, 0.72);
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease;
   text-align: left;
@@ -208,6 +224,23 @@ p {
 .row-meta {
   color: var(--muted);
   font-size: 13px;
+}
+
+.cadet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cadet-row .row-button {
+  flex: 1 1 240px;
+}
+
+.cadet-row .actions {
+  margin-top: 0;
+  flex-wrap: wrap;
 }
 
 .tabs {

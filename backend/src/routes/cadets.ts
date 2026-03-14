@@ -12,6 +12,7 @@ const cadetCreateSchema = z.object({
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
   cadetNumber: z.string().trim().min(1),
+  affectation: z.string().trim().min(1).optional().nullable(),
   birthDate: z.string().trim().min(1).optional().nullable(),
   userName: z.string().trim().min(1).optional().nullable()
 });
@@ -20,8 +21,10 @@ const cadetUpdateSchema = z.object({
   firstName: z.string().trim().min(1).optional(),
   lastName: z.string().trim().min(1).optional(),
   cadetNumber: z.string().trim().min(1).optional(),
+  affectation: z.string().trim().min(1).optional().nullable(),
   birthDate: z.string().trim().min(1).optional().nullable(),
-  userName: z.string().trim().min(1).optional().nullable()
+  userName: z.string().trim().min(1).optional().nullable(),
+  archived: z.boolean().optional()
 });
 
 const recruitmentStatusSchema = z.enum(["PENDING", "VALIDATED", "REFUSED"]);
@@ -57,6 +60,7 @@ const evaluationSchema = z.object({
   generalComment: z.string().trim().min(1).optional().nullable(),
   writtenTestScore: z.number().optional().nullable(),
   scenarioScore: z.number().optional().nullable(),
+  attitudeScore: z.number().optional().nullable(),
   totalScore: z.number().optional().nullable(),
   ppa: evaluationStatusSchema.optional(),
   training: evaluationStatusSchema.optional()
@@ -102,9 +106,11 @@ function formatCadet(cadet: any) {
     firstName: cadet.first_name,
     lastName: cadet.last_name,
     cadetNumber: cadet.cadet_number,
+    affectation: cadet.affectation ?? null,
     userId: cadet.user_id ?? null,
     userName: cadet.user?.username ?? null,
-    birthDate: cadet.birth_date ? cadet.birth_date.toISOString() : null
+    birthDate: cadet.birth_date ? cadet.birth_date.toISOString() : null,
+    archivedAt: cadet.archived_at ? cadet.archived_at.toISOString() : null
   };
 }
 
@@ -175,6 +181,7 @@ function formatEvaluation(evaluation: any) {
     generalComment: evaluation.general_comment ?? null,
     writtenTestScore: evaluation.written_test_score ?? null,
     scenarioScore: evaluation.scenario_score ?? null,
+    attitudeScore: evaluation.attitude_score ?? null,
     totalScore: evaluation.total_score ?? null,
     ppa: evaluation.ppa,
     training: evaluation.training,
@@ -265,7 +272,10 @@ router.get("/me", requireAuth, async (req, res, next) => {
 router.get("/", requirePerm("mod"), async (req, res, next) => {
   try {
     const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
-    const where = search
+    const archivedParam = typeof req.query.archived === "string" ? req.query.archived.trim().toLowerCase() : "";
+    const showArchived = archivedParam === "true" || archivedParam === "1";
+    const archivedClause = showArchived ? { archived_at: { not: null } } : { archived_at: null };
+    const searchClause = search
       ? {
           OR: [
             { first_name: { contains: search, mode: "insensitive" } },
@@ -273,7 +283,8 @@ router.get("/", requirePerm("mod"), async (req, res, next) => {
             { cadet_number: { contains: search, mode: "insensitive" } }
           ]
         }
-      : undefined;
+      : null;
+    const where = searchClause ? { AND: [archivedClause, searchClause] } : archivedClause;
 
     const cadets = await prisma.cadet.findMany({
       where,
@@ -318,6 +329,7 @@ router.post("/", requirePerm("mod"), async (req, res, next) => {
           first_name: parsed.firstName,
           last_name: parsed.lastName,
           cadet_number: parsed.cadetNumber,
+          affectation: parsed.affectation ?? null,
           user_id: userId,
           birth_date: birthDate
         }
@@ -409,14 +421,23 @@ router.patch("/:id", requirePerm("mod"), async (req, res, next) => {
       }
     }
 
+    const archivedAt =
+      parsed.archived === undefined
+        ? undefined
+        : parsed.archived
+          ? existing.archived_at ?? new Date()
+          : null;
+
     const updated = await prisma.cadet.update({
       where: { id: req.params.id },
       data: {
         first_name: parsed.firstName ?? undefined,
         last_name: parsed.lastName ?? undefined,
         cadet_number: parsed.cadetNumber ?? undefined,
+        affectation: parsed.affectation !== undefined ? parsed.affectation : undefined,
         user_id: userId,
-        birth_date: parsed.birthDate !== undefined ? birthDate : undefined
+        birth_date: parsed.birthDate !== undefined ? birthDate : undefined,
+        archived_at: archivedAt
       }
     });
 
@@ -439,7 +460,7 @@ router.patch("/:id", requirePerm("mod"), async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requirePerm("admin"), async (req, res, next) => {
+router.delete("/:id", requirePerm("mod"), async (req, res, next) => {
   try {
     const existing = await prisma.cadet.findUnique({ where: { id: req.params.id } });
     if (!existing) {
@@ -726,6 +747,7 @@ router.patch("/:id/evaluation", requirePerm("mod"), async (req, res, next) => {
         general_comment: parsed.generalComment ?? undefined,
         written_test_score: parsed.writtenTestScore ?? undefined,
         scenario_score: parsed.scenarioScore ?? undefined,
+        attitude_score: parsed.attitudeScore ?? undefined,
         total_score: parsed.totalScore ?? undefined,
         ppa: parsed.ppa ?? undefined,
         training: parsed.training ?? undefined
@@ -736,6 +758,7 @@ router.patch("/:id/evaluation", requirePerm("mod"), async (req, res, next) => {
         general_comment: parsed.generalComment ?? null,
         written_test_score: parsed.writtenTestScore ?? null,
         scenario_score: parsed.scenarioScore ?? null,
+        attitude_score: parsed.attitudeScore ?? null,
         total_score: parsed.totalScore ?? null,
         ppa: parsed.ppa ?? "NOT_ACQUIRED",
         training: parsed.training ?? "NOT_ACQUIRED"

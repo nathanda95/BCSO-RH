@@ -59,8 +59,10 @@ model Cadet {
   first_name    String
   last_name     String
   cadet_number  String          @unique
+  affectation   String?
   user_id       String?         @unique @db.Uuid
   birth_date    DateTime?
+  archived_at   DateTime?
   created_at    DateTime        @default(now())
   updated_at    DateTime        @updatedAt
 
@@ -123,6 +125,7 @@ model Evaluation {
   general_comment    String?
   written_test_score Float?
   scenario_score     Float?
+  attitude_score     Float?
   total_score        Float?
   ppa                EvaluationStatus  @default(NOT_ACQUIRED)
   training           EvaluationStatus  @default(NOT_ACQUIRED)

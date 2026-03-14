@@ -47,7 +47,10 @@ router.post("/modules", requirePerm("mod"), async (req, res, next) => {
         }
       });
 
-      const cadets = await tx.cadet.findMany({ select: { id: true } });
+      const cadets = await tx.cadet.findMany({
+        select: { id: true },
+        where: { archived_at: null }
+      });
       if (cadets.length > 0) {
         await tx.trainingModule.createMany({
           data: cadets.map((cadet) => ({
