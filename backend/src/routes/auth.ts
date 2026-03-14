@@ -4,6 +4,7 @@ import { env } from "../env";
 import { prisma } from "../prisma";
 import { encryptToken } from "../utils/encryption";
 import {
+  addRoleToGuildMember,
   exchangeCodeForToken,
   fetchDiscordUser,
   fetchGuildMember,
@@ -53,11 +54,20 @@ router.get("/discord/callback", async (req, res) => {
     const discordUser = await fetchDiscordUser(token.access_token);
 
     console.info("[auth] Checking guild membership");
-    const member = await fetchGuildMember(token.access_token, env.DISCORD_GUILD_ID);
+    let member = await fetchGuildMember(token.access_token, env.DISCORD_GUILD_ID);
     if (!member) {
       console.info("[auth] User not in guild");
       req.session.isMember = false;
       return redirectForbidden(res, "not_member");
+    }
+
+    if (env.DISCORD_ROLE_CADET_ID && !member.roles.includes(env.DISCORD_ROLE_CADET_ID)) {
+      console.info("[auth] Assigning cadet role");
+      await addRoleToGuildMember(env.DISCORD_GUILD_ID, discordUser.id, env.DISCORD_ROLE_CADET_ID);
+      member = await fetchGuildMember(token.access_token, env.DISCORD_GUILD_ID);
+      if (!member) {
+        return redirectForbidden(res, "not_member");
+      }
     }
 
     const user = await prisma.user.upsert({

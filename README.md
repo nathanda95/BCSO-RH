@@ -40,6 +40,7 @@ Frontend runs on `http://localhost:5173`, backend on `http://localhost:3000`, Po
 
 ## OAuth2 Scopes
 The app uses `identify` and `guilds.members.read` to verify server membership and roles.
+If `DISCORD_ROLE_CADET_ID` is set, the backend also assigns that role automatically after login by using the bot token.
 
 ## Role Mapping
 Set role IDs in `.env`:
@@ -47,6 +48,12 @@ Set role IDs in `.env`:
 - `DISCORD_ROLE_MOD_ID`
 - `DISCORD_ROLE_PREMIUM_ID`
 - `DISCORD_ROLE_CADET_ID` (optional)
+
+For automatic assignment to work:
+- `DISCORD_ROLE_CADET_ID` must be set
+- the bot must be in the server
+- the bot needs the `Manage Roles` permission
+- the bot's highest role must be above the cadet role in Discord role order
 
 ## Token Storage
 Refresh tokens are encrypted at rest with AES-GCM when `APP_ENCRYPTION_KEY` is set (base64-encoded 32 bytes).

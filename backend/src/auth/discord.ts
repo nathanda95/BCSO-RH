@@ -132,6 +132,22 @@ export async function fetchGuildMember(accessToken: string, guildId: string): Pr
   return (await response.json()) as DiscordGuildMember;
 }
 
+export async function addRoleToGuildMember(
+  guildId: string,
+  userId: string,
+  roleId: string
+): Promise<void> {
+  const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+    method: "PUT",
+    headers: getBotAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Discord add role failed: ${response.status} ${text}`);
+  }
+}
+
 function getBotAuthHeaders() {
   if (!env.DISCORD_BOT_TOKEN) {
     throw new Error("Missing DISCORD_BOT_TOKEN for bot API calls.");
@@ -179,7 +195,8 @@ export async function fetchGuildMembers(guildId: string): Promise<DiscordGuildMe
     }
 
     members.push(...batch);
-    after = batch[batch.length - 1].user?.id;
+    const lastMember = batch[batch.length - 1];
+    after = lastMember?.user?.id;
 
     if (!after || batch.length < 1000) {
       break;

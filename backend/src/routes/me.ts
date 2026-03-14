@@ -1,9 +1,9 @@
 ﻿import { Router } from "express";
 import { env } from "../env";
+import { addRoleToGuildMember, fetchGuildMember, refreshDiscordToken } from "../auth/discord";
 import { prisma } from "../prisma";
 import { decryptToken, encryptToken } from "../utils/encryption";
 import { computePermissions } from "../auth/permissions";
-import { fetchGuildMember, refreshDiscordToken } from "../auth/discord";
 import { requireAuth } from "../middleware/auth";
 
 const router = Router();
@@ -68,10 +68,20 @@ router.post("/refresh", requireAuth, async (req, res) => {
     });
   }
 
-  const member = await fetchGuildMember(accessToken, env.DISCORD_GUILD_ID);
+  let member = await fetchGuildMember(accessToken, env.DISCORD_GUILD_ID);
   if (!member) {
     req.session.isMember = false;
     return res.status(403).json({ error: "not_member", isMember: false });
+  }
+
+  if (env.DISCORD_ROLE_CADET_ID && !member.roles.includes(env.DISCORD_ROLE_CADET_ID)) {
+    console.info("[auth] Assigning cadet role during refresh");
+    await addRoleToGuildMember(env.DISCORD_GUILD_ID, user.discord_id, env.DISCORD_ROLE_CADET_ID);
+    member = await fetchGuildMember(accessToken, env.DISCORD_GUILD_ID);
+    if (!member) {
+      req.session.isMember = false;
+      return res.status(403).json({ error: "not_member", isMember: false });
+    }
   }
 
   await prisma.discordMembershipCache.upsert({
