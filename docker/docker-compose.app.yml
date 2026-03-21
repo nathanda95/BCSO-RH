@@ -9,8 +9,8 @@ services:
       - ../backend/.env
     environment:
       DATABASE_URL: postgresql://bcso_db_user:20%^hXZe4YfgjU4DEz0k@127.0.0.1:5432/bcso_app?schema=public
-      FRONTEND_URL: https://rh-bcso.nathanda95.fr
-      DISCORD_REDIRECT_URI: https://rh-bcso-back.nathanda95.fr/auth/discord/callback
+      FRONTEND_URL: https://rh-lspa.nathanda95.fr
+      DISCORD_REDIRECT_URI: https://rh-lspa-back.nathanda95.fr/auth/discord/callback
       PORT: 8090
     command: ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
 
